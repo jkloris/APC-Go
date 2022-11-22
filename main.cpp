@@ -98,6 +98,15 @@ void clearStones(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t
 		clearStones(board, x, y + 1, stone);
 }
 
+void clearVisits(std::vector<std::vector<uint64_t>>* board) {
+	for (size_t i = 0; i < (*board).size(); i++) {
+		for (size_t j = 0; j < (*board).size(); j++) {
+			if ((*board)[i][j] % 2 == 1)
+				(*board)[i][j]--;
+		}
+	}
+}
+
 
 
 void place(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t y, uint16_t stone) {
@@ -108,39 +117,53 @@ void place(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t y, ui
 	}
 
 	uint16_t invStone = stone == STONE_O ? STONE_X : STONE_O;
-	(*board)[x][y] = stone + 1;
+	std::vector<std::vector<uint64_t>> boardCpy = ( * board), boardCpy2 = (*board);
+	//printBoard(*board);
+
+	boardCpy[x][y] = stone + 1;
+	//std::cout << "board:\n";
+	//printBoard(*board);
+	//std::cout << "cpy:\n";
+	//printBoard(boardCpy);
 	bool cleared = false;
 
-	if (x > 0 && (*board)[x - 1][y] == invStone && findFreedom(board, x - 1, y, invStone) == 0) {
+
+	if (x > 0 && boardCpy[x - 1][y] == invStone && findFreedom(&boardCpy, x - 1, y, invStone) == 0) {
 		std::cout << "DELx-1\n";
-		clearStones(board, x - 1,y, invStone+1);
+		clearStones(&boardCpy, x - 1,y, invStone+1);
 		cleared = true;
 	}
-		
+	clearVisits(&boardCpy);
 
-	if (y > 0 && (*board)[x][y - 1] == invStone && findFreedom(board, x, y - 1, invStone) == 0) {
+	if (y > 0 && boardCpy[x][y - 1] == invStone && findFreedom(&boardCpy, x, y - 1, invStone) == 0) {
 		std::cout << "DELy-1\n";
-		clearStones(board, x, y-1, invStone+1);
+		clearStones(&boardCpy, x, y-1, invStone+1);
 		cleared = true;
 	}
+	clearVisits(&boardCpy);
 
-	if (x < (*board).size() - 1 && (*board)[x + 1][y] == invStone && findFreedom(board, x + 1, y, invStone) == 0) {
+	if (x < boardCpy.size() - 1 && boardCpy[x + 1][y] == invStone && findFreedom(&boardCpy, x + 1, y, invStone) == 0) {
 		std::cout << "DELx+1\n";
-		clearStones(board, x + 1,y, invStone+1);
+		clearStones(&boardCpy, x + 1,y, invStone+1);
 		cleared = true;
 	}
+	clearVisits(&boardCpy);
 
-	if (y < (*board).size() - 1 && (*board)[x][y + 1] == invStone && findFreedom(board, x, y + 1, invStone) == 0) {
+	if (y < boardCpy.size() - 1 && boardCpy[x][y + 1] == invStone && findFreedom(&boardCpy, x, y + 1, invStone) == 0) {
 		std::cout << "DELy+1\n";
-		clearStones(board, x , y+1, invStone+1);
+		clearStones(&boardCpy, x , y+1, invStone+1);
 		cleared = true;
 	}
+	clearVisits(&boardCpy);
 
-	if (!cleared && findFreedom(board, x, y, stone) == 0) {
-		(*board)[x][y] = EMPTY;
+	if (!cleared && findFreedom(&boardCpy2, x, y, stone) == 0) {
 		std::cout << "Cant place stone\n";
+		//boardCpy[x][y] = EMPTY;
 		return;
 	}
+	boardCpy[x][y] = stone;
+	*board = boardCpy;
+
 }
 
 
@@ -160,9 +183,17 @@ int main()
 
 	boardCpy = test;
 	printBoard(boardCpy);
-	place(&boardCpy, 3, 2, STONE_O);
+	place(&boardCpy, 5, 2, STONE_X);
 	printBoard(boardCpy);
 
+	place(&boardCpy, 5, 3, STONE_O);
+	printBoard(boardCpy);
+
+	place(&boardCpy, 5, 4, STONE_O);
+	printBoard(boardCpy);
+
+	place(&boardCpy, 5, 5, STONE_X);
+	printBoard(boardCpy);
 	/*
 	board[0][1] = STONE_O;
 	board[2][4] = STONE_X;
