@@ -223,7 +223,8 @@ int main(int argc, char* argv[])
 			turn = !turn;
 		}
 		else {
-			end = 0;
+			
+
 			try
 			{
 				pos[num] = std::stoi(cmd);
@@ -236,6 +237,7 @@ int main(int argc, char* argv[])
 				return EXIT_FAILURE;
 			}
 
+
 			if (num == 0) {
 				num++;
 
@@ -244,18 +246,26 @@ int main(int argc, char* argv[])
 				if (turn) {
 
 					if (!place(&board, pos[0], pos[1], STONE_X)) {
-						turn = !turn;
+						//turn = !turn;
+
+						//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
+						continue;
 					}
 				}
 				else {
-					if (!place(&board, pos[0], pos[1], STONE_O))
-						turn = !turn;
+					if (!place(&board, pos[0], pos[1], STONE_O)) {
+						//turn = !turn;
+						//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
+						continue;
+					}
 				}
-				
 				turn = !turn;
+				//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
+				//printBoard(board);
 
+				end = 0;
 			}
-
+			
 
 		}
 	}
