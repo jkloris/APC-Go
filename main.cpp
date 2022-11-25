@@ -23,6 +23,11 @@ struct Args
 	unsigned int size;
 };
 
+struct Points {
+	int X = 0;
+	int O = 0;
+};
+
 void printBoard(std::vector<std::vector<uint8_t>> board) {
 	for (size_t i = 0; i < board.size(); i++)
 	{
@@ -82,20 +87,85 @@ uint32_t findFreedom(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint3
 	return freedom;
 }
 
-void clearStones(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uint8_t stone) {
-	(*board)[x][y] = 0;
+
+
+int clearStones(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uint8_t stone) {
+	(*board)[x][y] = EMPTY;
+	int sum = 1;
 
 	if (x > 0 && stone == (*board)[x - 1][y])
-		clearStones(board, x - 1, y, stone);
+		sum +=  clearStones(board, x - 1, y, stone) ;
 
 	if (y > 0 && stone == (*board)[x][y - 1])
-		clearStones(board, x, y - 1, stone);
+		sum += clearStones(board, x, y - 1, stone) ;
 
 	if (x < (*board).size() - 1 && stone == (*board)[x + 1][y])
-		clearStones(board, x + 1, y, stone);
+		sum += clearStones(board, x + 1, y, stone) ;
 
 	if (y < (*board).size() - 1 && stone == (*board)[x][y + 1])
-		clearStones(board, x, y + 1, stone);
+		sum += clearStones(board, x, y + 1, stone) ;
+
+	return sum ;
+}
+
+
+int countGroupePoints(std::vector<std::vector<uint8_t>>* board, size_t x, size_t y, bool *pX, bool *pO) {
+	(*board)[x][y] = EMPTY_VIS;
+	int sum = 1;
+
+	if (x > 0 && EMPTY == (*board)[x - 1][y])
+		sum += countGroupePoints(board, x - 1, y, pX, pO);
+	else if (x > 0 && STONE_O == (*board)[x - 1][y])
+		*pO = true;
+	else if (x > 0 && STONE_X == (*board)[x - 1][y])
+		*pX = true;
+
+	if (y > 0 && EMPTY == (*board)[x][y - 1])
+		sum += countGroupePoints(board, x, y - 1, pX, pO);
+	else if (y > 0 && STONE_O == (*board)[x][y - 1])
+		*pO = true;
+	else if (y > 0 && STONE_X == (*board)[x][y - 1])
+		*pX = true;
+
+	if (x < (*board).size() - 1 && EMPTY == (*board)[x + 1][y])
+		sum += countGroupePoints(board, x + 1, y, pX, pO);
+	else if (x < (*board).size() - 1 && STONE_O == (*board)[x + 1][y])
+		*pO = true;
+	else if (x < (*board).size() - 1 && STONE_X == (*board)[x + 1][y])
+		*pX = true;
+
+	if (y < (*board).size() - 1 && EMPTY == (*board)[x][y + 1])
+		sum += countGroupePoints(board, x, y + 1, pX, pO);
+	else if (y < (*board).size() - 1 && STONE_O == (*board)[x][y + 1])
+		*pO = true;
+	else if (y < (*board).size() - 1 && STONE_X == (*board)[x][y + 1])
+		*pX = true;
+
+	return sum;
+}
+
+void countPoints(std::vector<std::vector<uint8_t>>* board, Points *points) {
+	bool pX = false, pO = false;
+	int pts = 0;
+	for (size_t i = 0; i < (*board).size(); i++) {
+		for (size_t j = 0; j < (*board).size(); j++) {
+			
+			if ((*board)[i][j] == EMPTY) {
+				pX = false;
+				pO = false;
+
+				pts = countGroupePoints(board, i, j, &pX, &pO);
+				if (pX && !pO) {
+					points->X += pts;
+				}
+				else if (!pX && pO) {
+					points->O += pts;
+				}
+
+			}
+				
+		}
+	}
 }
 
 void clearVisits(std::vector<std::vector<uint8_t>>* board) {
@@ -109,7 +179,7 @@ void clearVisits(std::vector<std::vector<uint8_t>>* board) {
 
 
 
-bool place(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uint8_t stone) {
+bool place(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uint8_t stone, Points *points) {
 	
 	if ((*board)[x][y] != EMPTY) {
 		//std::cout << "Spot is not	 empty\n";
@@ -118,7 +188,7 @@ bool place(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uin
 
 	uint8_t invStone = stone == STONE_O ? STONE_X : STONE_O;
 	std::vector<std::vector<uint8_t>> boardCpy = ( * board), boardCpy2 = (*board);
-
+	int pts = 0;
 
 	boardCpy[x][y] = stone + 1;
 
@@ -126,25 +196,25 @@ bool place(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uin
 
 
 	if (x > 0 && boardCpy[x - 1][y] == invStone && findFreedom(&boardCpy, x - 1, y, invStone) == 0) {
-		clearStones(&boardCpy, x - 1,y, invStone+1);
+		pts += clearStones(&boardCpy, x - 1,y, invStone+1) ;
 		cleared = true;
 	}
 	clearVisits(&boardCpy);
 
 	if (y > 0 && boardCpy[x][y - 1] == invStone && findFreedom(&boardCpy, x, y - 1, invStone) == 0) {
-		clearStones(&boardCpy, x, y-1, invStone+1);
+		pts += clearStones(&boardCpy, x, y-1, invStone+1) ;
 		cleared = true;
 	}
 	clearVisits(&boardCpy);
 
 	if (x < boardCpy.size() - 1 && boardCpy[x + 1][y] == invStone && findFreedom(&boardCpy, x + 1, y, invStone) == 0) {
-		clearStones(&boardCpy, x + 1,y, invStone+1);
+		pts += clearStones(&boardCpy, x + 1,y, invStone+1) ;
 		cleared = true;
 	}
 	clearVisits(&boardCpy);
 
 	if (y < boardCpy.size() - 1 && boardCpy[x][y + 1] == invStone && findFreedom(&boardCpy, x, y + 1, invStone) == 0) {
-		clearStones(&boardCpy, x , y+1, invStone+1);
+		pts += clearStones(&boardCpy, x , y+1, invStone+1) ;
 		cleared = true;
 	}
 	clearVisits(&boardCpy);
@@ -155,7 +225,11 @@ bool place(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uin
 	}
 	boardCpy[x][y] = stone;
 	*board = boardCpy;
-	
+	if (stone == STONE_O)
+		points->O += pts;
+	if (stone == STONE_X)
+		points->X += pts;
+
 	return true;
 }
 
@@ -221,16 +295,19 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	
+	// game params
 	std::string cmd;
 	uint16_t end = 0;
 	bool turn = true;
 	unsigned int num = 0;
+	Points points = {  };
+
 	std::vector<unsigned int> pos = { 0,0 };
-
 	std::vector<std::vector<uint8_t>> board = initBoard(arguments.size), boardCpy;
-	std::vector<std::vector<std::vector<uint8_t>>> boardHash;
 
+
+	// hash params
+	std::vector<std::vector<std::vector<uint8_t>>> boardHash;
 	std::map<size_t, std::vector<std::vector<std::vector<uint8_t>>>> hashTbl = { {hash(board) ,{ board}} };
 	size_t hashVal = 0;
 	bool hashrep = false;
@@ -266,19 +343,19 @@ int main(int argc, char* argv[])
 				num = 0;
 				if (turn) {
 
-					if (!place(&boardCpy, pos[0], pos[1], STONE_X)) {
+					if (!place(&boardCpy, pos[0], pos[1], STONE_X, &points)) {
 						//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
 						continue;
 					}
 				}
 				else {
-					if (!place(&boardCpy, pos[0], pos[1], STONE_O)) {
+					if (!place(&boardCpy, pos[0], pos[1], STONE_O, &points)) {
 						//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
 						continue;
 					}
 				}
 				
-				//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
+				
 
 
 				// repetition handling
@@ -302,6 +379,7 @@ int main(int argc, char* argv[])
 				}
 
 				// successful turn
+				//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
 				end = 0;
 				turn = !turn;
 				board = boardCpy;
@@ -315,6 +393,12 @@ int main(int argc, char* argv[])
 
 	if (arguments.board) {
 		printBoard(board);
+		
+	}
+	if (arguments.score) {
+
+		countPoints(&board, &points);
+		std::cout << points.X << " " << points.O;
 	}
 
 
