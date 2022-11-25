@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
 		if (a <= 0)
 			throw(std::runtime_error(argv[3]));
 	}
-	catch (std::exception) {
+	catch (const std::exception&) {
 		return EXIT_FAILURE;
 	}
 	arguments.size = a;
@@ -301,8 +301,8 @@ int main(int argc, char* argv[])
 	bool turn = true;
 	unsigned int num = 0;
 	Points points = {  };
+	std::vector<int> pos = { 0,0 };
 
-	std::vector<unsigned int> pos = { 0,0 };
 	std::vector<std::vector<uint8_t>> board = initBoard(arguments.size), boardCpy;
 
 
@@ -332,7 +332,7 @@ int main(int argc, char* argv[])
 			{
 				return EXIT_FAILURE;
 			}
-			if (pos[num] < 0 || pos[num] >= arguments.size) {
+			if (pos[num] < 0 || pos[num] >= static_cast<int>( arguments.size)) {
 				return EXIT_FAILURE;
 			}
 
@@ -398,7 +398,7 @@ int main(int argc, char* argv[])
 	if (arguments.score) {
 
 		countPoints(&board, &points);
-		std::cout << points.X << " " << points.O;
+		std::cout << points.X << " " << points.O << '\n';
 	}
 
 
