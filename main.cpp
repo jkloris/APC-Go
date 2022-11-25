@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 
 #define EMPTY 0
 #define EMPTY_VIS 1
@@ -10,8 +11,8 @@
 #define STONE_X 4
 #define STONE_X_VIS 5
 
-std::vector<std::vector<uint64_t>> initBoard(uint64_t size) {
-	std::vector<std::vector<uint64_t>> board(size, std::vector<uint64_t>(size));
+std::vector<std::vector<uint8_t>> initBoard(uint32_t size) {
+	std::vector<std::vector<uint8_t>> board(size, std::vector<uint8_t>(size));
 	return board;
 }
 
@@ -22,7 +23,7 @@ struct Args
 	unsigned int size;
 };
 
-void printBoard(std::vector<std::vector<uint64_t>> board) {
+void printBoard(std::vector<std::vector<uint8_t>> board) {
 	for (size_t i = 0; i < board.size(); i++)
 	{
 
@@ -57,11 +58,11 @@ void printBoard(std::vector<std::vector<uint64_t>> board) {
 	}
 }
 
-uint64_t findFreedom(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t y, uint16_t stone) {
+uint32_t findFreedom(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uint8_t stone) {
 	
 	(*board)[x][y]=stone+1;
 
-	uint64_t freedom =  (x > 0 && 0 == (*board)[x - 1][y] && ++(*board)[x - 1][y])
+	uint32_t freedom =  (x > 0 && 0 == (*board)[x - 1][y] && ++(*board)[x - 1][y])
 						+ (y > 0 && 0 == (*board)[x][y - 1] && ++(*board)[x][y - 1])
 						+ (x < (*board).size() - 1 && 0 == (*board)[x + 1][y] && ++(*board)[x + 1][y])
 						+ (y < (*board).size() - 1 && 0 == (*board)[x][y + 1] && ++(*board)[x][y + 1]);
@@ -81,7 +82,7 @@ uint64_t findFreedom(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint
 	return freedom;
 }
 
-void clearStones(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t y, uint16_t stone) {
+void clearStones(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uint8_t stone) {
 	(*board)[x][y] = 0;
 
 	if (x > 0 && stone == (*board)[x - 1][y])
@@ -97,7 +98,7 @@ void clearStones(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t
 		clearStones(board, x, y + 1, stone);
 }
 
-void clearVisits(std::vector<std::vector<uint64_t>>* board) {
+void clearVisits(std::vector<std::vector<uint8_t>>* board) {
 	for (size_t i = 0; i < (*board).size(); i++) {
 		for (size_t j = 0; j < (*board).size(); j++) {
 			if ((*board)[i][j] % 2 == 1)
@@ -108,22 +109,19 @@ void clearVisits(std::vector<std::vector<uint64_t>>* board) {
 
 
 
-bool place(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t y, uint16_t stone) {
+bool place(std::vector<std::vector<uint8_t>>* board, uint32_t x, uint32_t y, uint8_t stone) {
 	
 	if ((*board)[x][y] != EMPTY) {
-		//std::cout << "Spot is not empty\n";
+		//std::cout << "Spot is not	 empty\n";
 		return false;
 	}
 
-	uint16_t invStone = stone == STONE_O ? STONE_X : STONE_O;
-	std::vector<std::vector<uint64_t>> boardCpy = ( * board), boardCpy2 = (*board);
-	//printBoard(*board);
+	uint8_t invStone = stone == STONE_O ? STONE_X : STONE_O;
+	std::vector<std::vector<uint8_t>> boardCpy = ( * board), boardCpy2 = (*board);
+
 
 	boardCpy[x][y] = stone + 1;
-	//std::cout << "board:\n";
-	//printBoard(*board);
-	//std::cout << "cpy:\n";
-	//printBoard(boardCpy);
+
 	bool cleared = false;
 
 
@@ -153,7 +151,6 @@ bool place(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t y, ui
 
 	if (!cleared && findFreedom(&boardCpy2, x, y, stone) == 0) {
 		//std::cout << "Cant place stone\n";
-		//boardCpy[x][y] = EMPTY;
 		return false;
 	}
 	boardCpy[x][y] = stone;
@@ -162,12 +159,33 @@ bool place(std::vector<std::vector<uint64_t>>* board, uint64_t x, uint64_t y, ui
 	return true;
 }
 
+size_t hash(std::vector<std::vector<uint8_t>> board) {
+	size_t sum = 0;
+	for (size_t i = 0; i < board.size(); i++) {
+		for (size_t j = 0; j < board.size(); j++) {
+			sum += (board[i][j]) * (i * board.size() + (j+1) );
+		}
+	}
+	return sum % (board.size()* board.size() * 2 * (board.size() *board.size() + board.size()));
+}
+
+
+bool boardIsEq(std::vector<std::vector<uint8_t>> b1, std::vector<std::vector<uint8_t>> b2) {
+	for (size_t i = 0; i < b1.size(); i++) {
+		for (size_t j = 0; j < b2.size(); j++) {
+			if (b1[i][j] != b2[i][j])
+				return false;
+		}
+	}
+	return true;
+}
 
 
 
 int main(int argc, char* argv[])
 //int main()
 {
+	//Arguments handling
 	if (argc < 2 || argc > 4)
 		return EXIT_FAILURE;
 
@@ -203,7 +221,6 @@ int main(int argc, char* argv[])
 		}
 	}
 
-
 	
 	std::string cmd;
 	uint16_t end = 0;
@@ -211,8 +228,14 @@ int main(int argc, char* argv[])
 	unsigned int num = 0;
 	std::vector<unsigned int> pos = { 0,0 };
 
-	std::vector<std::vector<uint64_t>> board = initBoard(arguments.size);
+	std::vector<std::vector<uint8_t>> board = initBoard(arguments.size), boardCpy;
+	std::vector<std::vector<std::vector<uint8_t>>> boardHash;
 
+	std::map<size_t, std::vector<std::vector<std::vector<uint8_t>>>> hashTbl = { {hash(board) ,{ board}} };
+	size_t hashVal = 0;
+	bool hashrep = false;
+
+	// game run
 	while (end < 2) {
 
 		std::cin >> cmd;
@@ -223,8 +246,7 @@ int main(int argc, char* argv[])
 			turn = !turn;
 		}
 		else {
-			
-
+			boardCpy = board;
 			try
 			{
 				pos[num] = std::stoi(cmd);
@@ -237,7 +259,6 @@ int main(int argc, char* argv[])
 				return EXIT_FAILURE;
 			}
 
-
 			if (num == 0) {
 				num++;
 
@@ -245,30 +266,53 @@ int main(int argc, char* argv[])
 				num = 0;
 				if (turn) {
 
-					if (!place(&board, pos[0], pos[1], STONE_X)) {
-						//turn = !turn;
-
+					if (!place(&boardCpy, pos[0], pos[1], STONE_X)) {
 						//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
 						continue;
 					}
 				}
 				else {
-					if (!place(&board, pos[0], pos[1], STONE_O)) {
-						//turn = !turn;
+					if (!place(&boardCpy, pos[0], pos[1], STONE_O)) {
 						//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
 						continue;
 					}
 				}
-				turn = !turn;
+				
 				//std::cout << pos[0] << " " << pos[1] << " " << turn << '\n';
-				//printBoard(board);
 
+
+				// repetition handling
+				hashVal = hash(boardCpy);
+				boardHash = hashTbl[hashVal];
+				if (boardHash.size() <= 0) {
+					hashTbl[hashVal].push_back( boardCpy);
+				}
+				else {
+					hashrep = false;
+					for (size_t b = 0; b < boardHash.size(); b++) {
+
+						if (boardIsEq(boardCpy, boardHash[b])) {
+							hashrep = true;
+							break;
+						}	
+					}
+					if (hashrep) continue;
+					
+					hashTbl[hashVal].push_back(boardCpy);
+				}
+
+				// successful turn
 				end = 0;
+				turn = !turn;
+				board = boardCpy;
+				//printBoard(board);
+				
 			}
 			
 
 		}
 	}
+
 	if (arguments.board) {
 		printBoard(board);
 	}
